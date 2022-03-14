@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -69,7 +70,8 @@ func newTsNetServer() tsnet.Server {
 }
 
 func proxyBind(s *tsnet.Server, b *Binding) {
-	ln, err := s.Listen("tcp", fmt.Sprintf(":%d", b.From))
+	// ln, err := s.Listen("tcp", fmt.Sprintf(":%d", b.From))
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", b.From))
 	if err != nil {
 		log.Println(err)
 		return
@@ -80,6 +82,12 @@ func proxyBind(s *tsnet.Server, b *Binding) {
 			GetCertificate: tailscale.GetCertificate,
 		})
 	}
+
+	status, err := tailscale.Status(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("=== Peers: %+v\n", status.Peers())
 
 	log.Printf("started proxy bind from %d to %v (tls: %t)", b.From, b.To, b.Tls)
 
@@ -92,8 +100,8 @@ func proxyBind(s *tsnet.Server, b *Binding) {
 
 		go func(left net.Conn) {
 			defer left.Close()
-
-			right, err := net.Dial("tcp", b.To)
+			right, err := s.Dial(context.Background(), "tcp", b.To)
+			// right, err := net.Dial("tcp", b.To)
 			if err != nil {
 				log.Println(err)
 				return
@@ -103,7 +111,8 @@ func proxyBind(s *tsnet.Server, b *Binding) {
 			var wg sync.WaitGroup
 			proxyConn := func(a, b net.Conn) {
 				defer wg.Done()
-				_, err := io.Copy(a, b)
+				byteCount, err := io.Copy(a, b)
+				log.Printf("=== Copied %d bytes from %s to %s", byteCount, a.LocalAddr().String(), b.LocalAddr().String())
 				if err != nil {
 					log.Println(err)
 					return
@@ -132,6 +141,20 @@ func main() {
 	}
 
 	s := newTsNetServer()
+	// Start the tailnet manually since we want to detect peers first.
+	err = s.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	status, err := tailscale.Status(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("=== Peers: %+v\n", status.Peers())
+	for i, p := range status.Peers() {
+		fmt.Printf("=== Peer: %+v: %+v\n", i, p)
+	}
 
 	var wg sync.WaitGroup
 	for _, binding := range bindings {
