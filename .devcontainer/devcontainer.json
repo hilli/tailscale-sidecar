@@ -42,9 +42,9 @@
 	"remoteUser": "vscode",
 	"features": {
 		"docker-from-docker": "latest",
-		"kubectl-helm-minikube": "latest",
+		// "kubectl-helm-minikube": "latest",
 		"git": "os-provided",
-		"azure-cli": "latest",
+		// "azure-cli": "latest",
 		"sshd": "latest"
 	}
 }
