@@ -24,7 +24,8 @@
 	},
 	"remoteEnv": {
 		"TS_SIDECAR_BINDINGS": "/workspaces/tailscale-sidecar/bindings.json",
-		"TS_SIDECAR_NAME": "ts-proxy-server"
+		"TS_SIDECAR_NAME": "ts-proxy-server",
+		"TS_SIDECAR_STATEDIR": "./tsstate"
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.

@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"tailscale.com/client/tailscale"
+	"tailscale.com/control/controlclient"
 	"tailscale.com/tsnet"
 )
 
@@ -63,15 +64,22 @@ func newTsNetServer() tsnet.Server {
 		panic("failed to create default state directory")
 	}
 
+	ctropts := controlclient.Options{
+		ServerURL: "https://headscale.hilli.dk",
+		AuthKey: os.Getenv("TS_AUTHKEY"),
+	}
+
+
 	return tsnet.Server{
 		Dir:      stateDir,
 		Hostname: hostname,
+		// lb:	*ipnlocal.LocalBackend
 	}
 }
 
 func proxyBind(s *tsnet.Server, b *Binding) {
-	// ln, err := s.Listen("tcp", fmt.Sprintf(":%d", b.From))
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", b.From))
+	ln, err := s.Listen("tcp", fmt.Sprintf(":%d", b.From))
+	// ln, err := net.Listen("tcp", fmt.Sprintf(":%d", b.From))
 	if err != nil {
 		log.Println(err)
 		return
@@ -146,7 +154,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	status, err := tailscale.Status(context.Background())
 	if err != nil {
 		panic(err)
