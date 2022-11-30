@@ -12,9 +12,10 @@ import (
 	"os"
 	"sync"
 
+	"github.com/markpash/tailscale-sidecar/tsnet"
 	"tailscale.com/client/tailscale"
-	"tailscale.com/control/controlclient"
-	"tailscale.com/tsnet"
+	"tailscale.com/ipn"
+	// "tailscale.com/tsnet"
 )
 
 type Binding struct {
@@ -64,17 +65,40 @@ func newTsNetServer() tsnet.Server {
 		panic("failed to create default state directory")
 	}
 
-	ctropts := controlclient.Options{
-		ServerURL: "https://headscale.hilli.dk",
-		AuthKey: os.Getenv("TS_AUTHKEY"),
-	}
+	// logf := logger.Logf
+	// statePath := stateDir
+	// store, err := ipn.NewFileStore(statePath)
+	// if err != nil {
+	// 	log.Panic(err) // Probably not, but testing atm
+	// }
+	// logid := "tslib-TODO"
 
+	// lb, err := ipnlocal.NewLocalBackend(logf, logid, store, nil, eng)
+	// if err != nil {
+	// 	log.Fatalln("NewLocalBackend: %v", err)
+	// }
+	// lb.SetVarRoot(stateDir)
 
-	return tsnet.Server{
+	// ctropts := controlclient.Options{
+	// 	ServerURL: "https://headscale.hilli.dk",
+	// 	AuthKey: os.Getenv("TS_AUTHKEY"),
+	// }
+
+	tsNet := tsnet.Server{
 		Dir:      stateDir,
 		Hostname: hostname,
-		// lb:	*ipnlocal.LocalBackend
 	}
+	opts := ipn.Options{
+		Ser
+	}
+	tsNet.Lb.Start()
+	perfs := tsNet.Lb.Prefs()
+	log.Println("Hey")
+	perfs.ControlURL = "https://headscale.hilli.dk"
+	tsNet.Lb.SetPrefs(perfs)
+	log.Printf("perfs: %+v", perfs)
+	log.Printf("tsNet: %+v", tsNet)
+	return tsNet
 }
 
 func proxyBind(s *tsnet.Server, b *Binding) {
